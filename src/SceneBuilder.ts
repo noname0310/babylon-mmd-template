@@ -22,8 +22,8 @@ import {
     Vector3
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
-import type { MmdAnimation} from "babylon-mmd";
-import { BvmdLoader, MmdCamera, MmdPhysics, MmdRuntime, PmxLoader, SdefInjector } from "babylon-mmd";
+import type { MmdAnimation } from "babylon-mmd";
+import { BpmxLoader, BvmdLoader, MmdCamera, MmdPhysics, MmdRuntime, SdefInjector } from "babylon-mmd";
 
 // import { Inspector } from "@babylonjs/inspector";
 import type { ISceneBuilder } from "./BaseRuntime";
@@ -33,7 +33,7 @@ export class SceneBuilder implements ISceneBuilder {
         await AudioPermissionSolver.Invoke();
 
         SdefInjector.OverrideEngineCreateEffect(engine);
-        const pmxLoader = new PmxLoader();
+        const pmxLoader = new BpmxLoader();
         pmxLoader.loggingEnabled = true;
         // materialBuilder.loadDiffuseTexture = (): void => { /* do nothing */ };
         // materialBuilder.loadSphereTexture = (): void => { /* do nothing */ };
@@ -115,7 +115,7 @@ export class SceneBuilder implements ISceneBuilder {
 
         promises.push(SceneLoader.ImportMeshAsync(
             undefined,
-            "res/private_test/model/YYB Hatsune Miku_10th/YYB Hatsune Miku_10th_v1.02.pmx",
+            "res/private_test/model/YYB Hatsune Miku_10th.bpmx",
             undefined,
             scene,
             (event) => updateLoadingText(1, `Loading model... ${event.loaded}/${event.total} (${Math.floor(event.loaded * 100 / event.total)}%)`)
