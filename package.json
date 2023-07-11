@@ -6,7 +6,6 @@
         "start": "webpack serve --mode development",
         "watch": "webpack --watch",
         "build": "webpack --env production",
-        "build:lib": "tspc --project tsconfig.lib.json && webpack --env production --config webpack.lib.config.ts",
         "lint": "eslint --ext .ts,.tsx . --fix --cache"
     },
     "repository": {
