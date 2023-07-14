@@ -17,21 +17,18 @@ import {
     SceneLoader,
     ShadowGenerator,
     SkeletonViewer,
-    Sound,
     UniversalCamera,
     Vector3
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
 import type { MmdAnimation } from "babylon-mmd";
-import { BpmxLoader, BvmdLoader, MmdCamera, MmdPhysics, MmdRuntime, SdefInjector } from "babylon-mmd";
+import { BpmxLoader, BvmdLoader, MmdCamera, MmdPhysics, MmdRuntime, SdefInjector, StreamAudioPlayer } from "babylon-mmd";
 
 // import { Inspector } from "@babylonjs/inspector";
 import type { ISceneBuilder } from "./BaseRuntime";
 
 export class SceneBuilder implements ISceneBuilder {
     public async build(canvas: HTMLCanvasElement, engine: Engine): Promise<Scene> {
-        await AudioPermissionSolver.Invoke();
-
         SdefInjector.OverrideEngineCreateEffect(engine);
         const pmxLoader = new BpmxLoader();
         pmxLoader.loggingEnabled = true;
@@ -88,13 +85,14 @@ export class SceneBuilder implements ISceneBuilder {
         const mmdRuntime = new MmdRuntime(new MmdPhysics(scene));
         mmdRuntime.loggingEnabled = true;
 
-        const sound = new Sound("sound",
-            "res/private_test/motion/melancholy_night/melancholy_night.mp3",
-            scene, () => {
-                sound.play();
-                mmdRuntime.playAnimation();
-            }, { loop: false }
-        );
+        const audioPlayer = new StreamAudioPlayer();
+        audioPlayer.source = "res/private_test/motion/melancholy_night/melancholy_night.mp3";
+        mmdRuntime.setAudioPlayer(audioPlayer);
+        canvas.addEventListener("click", () => {
+            audioPlayer.unmute();
+        });
+
+        mmdRuntime.playAnimation();
 
         engine.displayLoadingUI();
 
@@ -193,39 +191,5 @@ export class SceneBuilder implements ISceneBuilder {
         // Inspector.Show(scene, { });
 
         return scene;
-    }
-}
-
-class AudioPermissionSolver {
-    public static async Invoke(): Promise<void> {
-        let audioTest: HTMLAudioElement|null = new Audio("res/audioTest.mp3");
-
-        try {
-            await audioTest.play();
-        } catch (error: unknown) {
-            if (error instanceof DOMException && error.name === "NotAllowedError") {
-                const button = document.createElement("button");
-                button.style.position = "absolute";
-                button.style.left = "0";
-                button.style.top = "0";
-                button.style.width = "100%";
-                button.style.height = "100%";
-                button.style.border = "none";
-                button.style.fontSize = "32px";
-                button.innerText = "Play";
-                document.body.appendChild(button);
-                await new Promise<void>((resolve): void => {
-                    button.onclick = (): void => {
-                        audioTest!.play();
-                        audioTest!.remove();
-                        audioTest = null;
-                        button.remove();
-                        resolve();
-                    };
-                });
-            } else {
-                throw error;
-            }
-        }
     }
 }
