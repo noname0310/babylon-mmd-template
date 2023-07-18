@@ -22,7 +22,7 @@ import {
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
 import type { MmdAnimation } from "babylon-mmd";
-import { BpmxLoader, BvmdLoader, MmdCamera, MmdPhysics, MmdRuntime, SdefInjector, StreamAudioPlayer } from "babylon-mmd";
+import { BpmxLoader, BvmdLoader, MmdCamera, MmdPhysics, MmdPlayerControl, MmdRuntime, SdefInjector, StreamAudioPlayer } from "babylon-mmd";
 
 // import { Inspector } from "@babylonjs/inspector";
 import type { ISceneBuilder } from "./BaseRuntime";
@@ -86,6 +86,7 @@ export class SceneBuilder implements ISceneBuilder {
         mmdRuntime.loggingEnabled = true;
 
         const audioPlayer = new StreamAudioPlayer();
+        audioPlayer.preservesPitch = false;
         audioPlayer.source = "res/private_test/motion/melancholy_night/melancholy_night.mp3";
         mmdRuntime.setAudioPlayer(audioPlayer);
         canvas.addEventListener("click", () => {
@@ -93,6 +94,8 @@ export class SceneBuilder implements ISceneBuilder {
         });
 
         mmdRuntime.playAnimation();
+
+        new MmdPlayerControl(scene, mmdRuntime, audioPlayer);
 
         engine.displayLoadingUI();
 
@@ -174,12 +177,12 @@ export class SceneBuilder implements ISceneBuilder {
         if (useBasicPostProcess) {
             const defaultPipeline = new DefaultRenderingPipeline("default", true, scene, [mmdCamera]);
             defaultPipeline.samples = 4;
-            defaultPipeline.bloomEnabled = false;
+            defaultPipeline.bloomEnabled = true;
             defaultPipeline.chromaticAberrationEnabled = false;
             defaultPipeline.chromaticAberration.aberrationAmount = 1;
             defaultPipeline.depthOfFieldEnabled = false;
             defaultPipeline.fxaaEnabled = true;
-            defaultPipeline.imageProcessingEnabled = false;
+            defaultPipeline.imageProcessingEnabled = true;
             defaultPipeline.imageProcessing.toneMappingEnabled = true;
             defaultPipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
             defaultPipeline.imageProcessing.vignetteWeight = 0.5;
