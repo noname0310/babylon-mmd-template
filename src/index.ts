@@ -1,9 +1,7 @@
-import { Engine } from "@babylonjs/core";
+import { Engine } from "@babylonjs/core/Engines/engine";
 
-import { BaseRuntime } from "./BaseRuntime";
-import css from "./index.css";
-import { SceneBuilder } from "./SceneBuilder";
-css;
+import { BaseRuntime } from "./baseRuntime";
+import { SceneBuilder } from "./sceneBuilder";
 
 const canvas = document.getElementById("render-canvas");
 if (!(canvas instanceof HTMLCanvasElement)) throw new Error("Invalid canvas element");

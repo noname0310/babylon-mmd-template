@@ -1,31 +1,32 @@
-import type { Engine,
-    Mesh} from "@babylonjs/core";
-import {
-    Color3,
-    Color4,
-    DefaultRenderingPipeline,
-    DirectionalLight,
-    HavokPlugin,
-    HemisphericLight,
-    ImageProcessingConfiguration,
-    MeshBuilder,
-    PhysicsBody,
-    PhysicsMotionType,
-    PhysicsShapeBox,
-    Quaternion,
-    Scene,
-    SceneLoader,
-    ShadowGenerator,
-    SkeletonViewer,
-    UniversalCamera,
-    Vector3
-} from "@babylonjs/core";
+import "@babylonjs/core/Loading/loadingScreen";
+import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
+import "@babylonjs/core/Rendering/prePassRendererSceneComponent";
+import "@babylonjs/core/Rendering/depthRendererSceneComponent";
+import "@babylonjs/core/Rendering/geometryBufferRendererSceneComponent";
+
+import { UniversalCamera } from "@babylonjs/core/Cameras/universalCamera";
+import type { Engine } from "@babylonjs/core/Engines/engine";
+import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
+import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
+import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
+import { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import type { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
+import { PhysicsShapeBox } from "@babylonjs/core/Physics/v2/physicsShape";
+import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
+import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
+import { Scene } from "@babylonjs/core/scene";
 import HavokPhysics from "@babylonjs/havok";
 import type { MmdAnimation } from "babylon-mmd";
 import { BpmxLoader, BvmdLoader, MmdCamera, MmdPhysics, MmdPlayerControl, MmdRuntime, SdefInjector, StreamAudioPlayer } from "babylon-mmd";
 
 // import { Inspector } from "@babylonjs/inspector";
-import type { ISceneBuilder } from "./BaseRuntime";
+import type { ISceneBuilder } from "./baseRuntime";
 
 export class SceneBuilder implements ISceneBuilder {
     public async build(canvas: HTMLCanvasElement, engine: Engine): Promise<Scene> {
@@ -157,11 +158,6 @@ export class SceneBuilder implements ISceneBuilder {
                 bodyBone!.getFinalMatrix()!.getTranslationToRef(directionalLight.position);
                 directionalLight.position.y -= 10;
             });
-
-            const viewer = new SkeletonViewer(modelMesh.skeleton!, modelMesh, scene, false, 3, {
-                displayMode: SkeletonViewer.DISPLAY_SPHERE_AND_SPURS
-            });
-            viewer.isEnabled = false;
         }
 
         mmdRuntime.register(scene);

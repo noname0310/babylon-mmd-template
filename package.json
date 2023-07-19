@@ -22,12 +22,9 @@
         "@typescript-eslint/eslint-plugin": "^6.1.0",
         "@typescript-eslint/parser": "^6.1.0",
         "copy-webpack-plugin": "^11.0.0",
-        "css-loader": "^6.8.1",
-        "css-minimizer-webpack-plugin": "^5.0.1",
         "eslint": "^8.45.0",
         "eslint-plugin-simple-import-sort": "^10.0.0",
         "eslint-webpack-plugin": "^4.0.1",
-        "extract-css-chunks-webpack-plugin": "^4.9.0",
         "file-loader": "^6.2.0",
         "html-loader": "^4.2.0",
         "html-webpack-plugin": "^5.5.3",
@@ -41,10 +38,10 @@
     },
     "sideEffects": false,
     "dependencies": {
-        "@babylonjs/core": "^6.12.3",
+        "@babylonjs/core": "^6.12.4",
         "@babylonjs/havok": "^1.1.0",
-        "@babylonjs/inspector": "^6.12.3",
-        "@babylonjs/materials": "^6.12.3",
+        "@babylonjs/inspector": "^6.12.4",
+        "@babylonjs/materials": "^6.12.4",
         "babylon-mmd": "^0.15.0"
     }
 }
