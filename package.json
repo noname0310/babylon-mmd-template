@@ -38,10 +38,10 @@
     },
     "sideEffects": false,
     "dependencies": {
-        "@babylonjs/core": "^6.12.4",
+        "@babylonjs/core": "^6.13.0",
         "@babylonjs/havok": "^1.1.0",
-        "@babylonjs/inspector": "^6.12.4",
-        "@babylonjs/materials": "^6.12.4",
-        "babylon-mmd": "^0.15.0"
+        "@babylonjs/inspector": "^6.13.0",
+        "@babylonjs/materials": "^6.13.0",
+        "babylon-mmd": "^0.18.0"
     }
 }

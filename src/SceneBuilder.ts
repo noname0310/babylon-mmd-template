@@ -22,10 +22,16 @@ import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
 import { Scene } from "@babylonjs/core/scene";
 import HavokPhysics from "@babylonjs/havok";
-import type { MmdAnimation } from "babylon-mmd";
-import { BpmxLoader, BvmdLoader, MmdCamera, MmdPhysics, MmdPlayerControl, MmdRuntime, SdefInjector, StreamAudioPlayer } from "babylon-mmd";
+import type { MmdAnimation } from "babylon-mmd/esm/Loader/Animation/mmdAnimation";
+import { BpmxLoader } from "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
+import { BvmdLoader } from "babylon-mmd/esm/Loader/Optimized/bvmdLoader";
+import { SdefInjector } from "babylon-mmd/esm/Loader/sdefInjector";
+import { StreamAudioPlayer } from "babylon-mmd/esm/Runtime/Audio/streamAudioPlayer";
+import { MmdCamera } from "babylon-mmd/esm/Runtime/mmdCamera";
+import { MmdPhysics } from "babylon-mmd/esm/Runtime/mmdPhysics";
+import { MmdRuntime } from "babylon-mmd/esm/Runtime/mmdRuntime";
+import { MmdPlayerControl } from "babylon-mmd/esm/Runtime/Util/mmdPlayerControl";
 
-// import { Inspector } from "@babylonjs/inspector";
 import type { ISceneBuilder } from "./baseRuntime";
 
 export class SceneBuilder implements ISceneBuilder {
@@ -86,7 +92,7 @@ export class SceneBuilder implements ISceneBuilder {
         const mmdRuntime = new MmdRuntime(new MmdPhysics(scene));
         mmdRuntime.loggingEnabled = true;
 
-        const audioPlayer = new StreamAudioPlayer();
+        const audioPlayer = new StreamAudioPlayer(scene);
         audioPlayer.preservesPitch = false;
         audioPlayer.source = "res/private_test/motion/melancholy_night/melancholy_night.mp3";
         mmdRuntime.setAudioPlayer(audioPlayer);
@@ -96,7 +102,8 @@ export class SceneBuilder implements ISceneBuilder {
 
         mmdRuntime.playAnimation();
 
-        new MmdPlayerControl(scene, mmdRuntime, audioPlayer);
+        const mmdPlayerControl = new MmdPlayerControl(scene, mmdRuntime, audioPlayer);
+        mmdPlayerControl.showPlayerControl();
 
         engine.displayLoadingUI();
 
