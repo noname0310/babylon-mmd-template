@@ -4,8 +4,10 @@ import "@babylonjs/core/Rendering/prePassRendererSceneComponent";
 import "@babylonjs/core/Rendering/depthRendererSceneComponent";
 import "@babylonjs/core/Rendering/geometryBufferRendererSceneComponent";
 import "@babylonjs/core/Helpers/sceneHelpers";
+import "@babylonjs/core/Meshes/thinInstanceMesh";
 
-import { UniversalCamera } from "@babylonjs/core/Cameras/universalCamera";
+import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
+import { PhysicsViewer } from "@babylonjs/core/Debug/physicsViewer";
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
@@ -59,17 +61,12 @@ export class SceneBuilder implements ISceneBuilder {
         mmdCamera.maxZ = 5000;
         mmdCamera.parent = mmdRoot;
 
-        const camera = new UniversalCamera("camera1", new Vector3(0, 15, -40), scene);
+        const camera = new ArcRotateCamera("arcRotateCamera", 0, 0, 45 * 0.07, new Vector3(0, 10 * 0.07, 1), scene);
         camera.maxZ = 5000;
-        camera.setTarget(new Vector3(0, 10, 0));
+        camera.setPosition(new Vector3(0, 10, -45).scaleInPlace(0.07));
         camera.attachControl(canvas, false);
-        camera.keysUp.push("W".charCodeAt(0));
-        camera.keysDown.push("S".charCodeAt(0));
-        camera.keysLeft.push("A".charCodeAt(0));
-        camera.keysRight.push("D".charCodeAt(0));
-        camera.inertia = 0;
-        camera.angularSensibility = 500;
-        camera.speed = 10;
+        camera.inertia = 0.8;
+        camera.speed = 4 * 0.07;
 
         const hemisphericLight = new HemisphericLight("HemisphericLight", new Vector3(0, 1, 0), scene);
         hemisphericLight.intensity = 0.5;
@@ -108,9 +105,6 @@ export class SceneBuilder implements ISceneBuilder {
         audioPlayer.preservesPitch = false;
         audioPlayer.source = "res/private_test/motion/melancholy_night/melancholy_night.mp3";
         mmdRuntime.setAudioPlayer(audioPlayer);
-        canvas.addEventListener("click", () => {
-            audioPlayer.unmute();
-        });
 
         mmdRuntime.playAnimation();
 
@@ -189,17 +183,30 @@ export class SceneBuilder implements ISceneBuilder {
             new Quaternion(),
             new Vector3(100, 2, 100), scene);
 
-        const useBasicPostProcess = false;
+
+        {
+            const physicsViewer = new PhysicsViewer(scene);
+            const modelMesh = loadResults[1].meshes[0] as Mesh;
+            for (const node of modelMesh.getChildren()) {
+                if ((node as any).physicsBody) {
+                    physicsViewer.showBody((node as any).physicsBody);
+                }
+            }
+            physicsViewer.dispose();
+            // physicsViewer.showBody(groundRigidBody);
+        }
+
+        const useBasicPostProcess = true;
 
         if (useBasicPostProcess) {
             const defaultPipeline = new DefaultRenderingPipeline("default", true, scene, [mmdCamera]);
             defaultPipeline.samples = 4;
-            defaultPipeline.bloomEnabled = true;
+            defaultPipeline.bloomEnabled = false;
             defaultPipeline.chromaticAberrationEnabled = false;
             defaultPipeline.chromaticAberration.aberrationAmount = 1;
             defaultPipeline.depthOfFieldEnabled = false;
             defaultPipeline.fxaaEnabled = true;
-            defaultPipeline.imageProcessingEnabled = true;
+            defaultPipeline.imageProcessingEnabled = false;
             defaultPipeline.imageProcessing.toneMappingEnabled = true;
             defaultPipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
             defaultPipeline.imageProcessing.vignetteWeight = 0.5;
@@ -207,6 +214,23 @@ export class SceneBuilder implements ISceneBuilder {
             defaultPipeline.imageProcessing.vignetteColor = new Color4(0, 0, 0, 0);
             defaultPipeline.imageProcessing.vignetteEnabled = true;
         }
+
+        let lastClickTime = -Infinity;
+        canvas.onclick = (): void => {
+            const currentTime = performance.now();
+            if (500 < currentTime - lastClickTime) {
+                lastClickTime = currentTime;
+                return;
+            }
+
+            lastClickTime = -Infinity;
+
+            if (scene.activeCamera === mmdCamera) {
+                scene.activeCamera = camera;
+            } else {
+                scene.activeCamera = mmdCamera;
+            }
+        };
 
         // Inspector.Show(scene, { });
 
