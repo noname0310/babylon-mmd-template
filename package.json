@@ -42,6 +42,6 @@
         "@babylonjs/havok": "^1.1.0",
         "@babylonjs/inspector": "^6.13.0",
         "@babylonjs/materials": "^6.13.0",
-        "babylon-mmd": "^0.18.0"
+        "babylon-mmd": "^0.19.0"
     }
 }
