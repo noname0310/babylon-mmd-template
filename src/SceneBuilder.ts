@@ -3,6 +3,7 @@ import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
 import "@babylonjs/core/Rendering/prePassRendererSceneComponent";
 import "@babylonjs/core/Rendering/depthRendererSceneComponent";
 import "@babylonjs/core/Rendering/geometryBufferRendererSceneComponent";
+import "@babylonjs/core/Helpers/sceneHelpers";
 
 import { UniversalCamera } from "@babylonjs/core/Cameras/universalCamera";
 import type { Engine } from "@babylonjs/core/Engines/engine";
@@ -15,6 +16,7 @@ import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
 import { PhysicsShapeBox } from "@babylonjs/core/Physics/v2/physicsShape";
@@ -22,6 +24,7 @@ import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
 import { Scene } from "@babylonjs/core/scene";
 import HavokPhysics from "@babylonjs/havok";
+import { ShadowOnlyMaterial } from "@babylonjs/materials/shadowOnly/shadowOnlyMaterial";
 import type { MmdAnimation } from "babylon-mmd/esm/Loader/Animation/mmdAnimation";
 import { BpmxLoader } from "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
 import { BvmdLoader } from "babylon-mmd/esm/Loader/Optimized/bvmdLoader";
@@ -48,8 +51,13 @@ export class SceneBuilder implements ISceneBuilder {
         const scene = new Scene(engine);
         scene.clearColor = new Color4(1, 1, 1, 1.0);
 
+        const mmdRoot = new TransformNode("mmdRoot", scene);
+        mmdRoot.scaling.scaleInPlace(0.07);
+        mmdRoot.position.z = 1;
+
         const mmdCamera = new MmdCamera("mmdCamera", new Vector3(0, 10, 0), scene);
         mmdCamera.maxZ = 5000;
+        mmdCamera.parent = mmdRoot;
 
         const camera = new UniversalCamera("camera1", new Vector3(0, 15, -40), scene);
         camera.maxZ = 5000;
@@ -72,22 +80,26 @@ export class SceneBuilder implements ISceneBuilder {
         directionalLight.intensity = 0.8;
         directionalLight.autoCalcShadowZBounds = false;
         directionalLight.autoUpdateExtends = false;
-        directionalLight.shadowMaxZ = 20;
-        directionalLight.shadowMinZ = -15;
-        directionalLight.orthoTop = 18;
+        directionalLight.shadowMaxZ = 2;
+        directionalLight.shadowMinZ = -2;
+        directionalLight.orthoTop = 4;
         directionalLight.orthoBottom = -1;
-        directionalLight.orthoLeft = -10;
-        directionalLight.orthoRight = 10;
+        directionalLight.orthoLeft = -2;
+        directionalLight.orthoRight = 2;
         directionalLight.shadowOrthoScale = 0;
 
-        const shadowGenerator = new ShadowGenerator(1024, directionalLight, true, mmdCamera);
+        const shadowGenerator = new ShadowGenerator(1024, directionalLight, true);
         shadowGenerator.usePercentageCloserFiltering = true;
         shadowGenerator.forceBackFacesOnly = true;
         shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
         shadowGenerator.frustumEdgeFalloff = 0.1;
 
         const ground = MeshBuilder.CreateGround("ground1", { width: 100, height: 100, subdivisions: 2, updatable: false }, scene);
+        const shadowOnlyMaterial = ground.material = new ShadowOnlyMaterial("shadowOnly", scene);
+        shadowOnlyMaterial.activeLight = directionalLight;
+        shadowOnlyMaterial.alpha = 0.1;
         ground.setEnabled(true);
+        ground.parent = mmdRoot;
 
         const mmdRuntime = new MmdRuntime(new MmdPhysics(scene));
         mmdRuntime.loggingEnabled = true;
@@ -143,7 +155,6 @@ export class SceneBuilder implements ISceneBuilder {
         setTimeout(() => engine.hideLoadingUI(), 0);
 
         scene.meshes.forEach((mesh) => {
-            if (mesh.name === "skyBox") return;
             mesh.receiveShadows = true;
             shadowGenerator.addShadowCaster(mesh);
         });
@@ -154,6 +165,7 @@ export class SceneBuilder implements ISceneBuilder {
 
         {
             const modelMesh = loadResults[1].meshes[0] as Mesh;
+            modelMesh.parent = mmdRoot;
 
             const mmdModel = mmdRuntime.createMmdModel(modelMesh);
             mmdModel.addAnimation(loadResults[0] as MmdAnimation);
@@ -175,7 +187,7 @@ export class SceneBuilder implements ISceneBuilder {
             new Quaternion(),
             new Vector3(100, 2, 100), scene);
 
-        const useBasicPostProcess = true;
+        const useBasicPostProcess = false;
 
         if (useBasicPostProcess) {
             const defaultPipeline = new DefaultRenderingPipeline("default", true, scene, [mmdCamera]);
@@ -196,6 +208,12 @@ export class SceneBuilder implements ISceneBuilder {
 
         // Inspector.Show(scene, { });
 
+        scene.createDefaultXRExperienceAsync({
+            uiOptions: {
+                sessionMode: "immersive-ar",
+                referenceSpaceType: "local-floor"
+            }
+        });
         return scene;
     }
 }
