@@ -13,7 +13,7 @@ import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator"
 import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
 import { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
@@ -82,10 +82,10 @@ export class SceneBuilder implements ISceneBuilder {
         directionalLight.autoUpdateExtends = false;
         directionalLight.shadowMaxZ = 2;
         directionalLight.shadowMinZ = -2;
-        directionalLight.orthoTop = 4;
+        directionalLight.orthoTop = 1;
         directionalLight.orthoBottom = -1;
-        directionalLight.orthoLeft = -2;
-        directionalLight.orthoRight = 2;
+        directionalLight.orthoLeft = -1;
+        directionalLight.orthoRight = 1;
         directionalLight.shadowOrthoScale = 0;
 
         const shadowGenerator = new ShadowGenerator(1024, directionalLight, true);
@@ -97,7 +97,7 @@ export class SceneBuilder implements ISceneBuilder {
         const ground = MeshBuilder.CreateGround("ground1", { width: 100, height: 100, subdivisions: 2, updatable: false }, scene);
         const shadowOnlyMaterial = ground.material = new ShadowOnlyMaterial("shadowOnly", scene);
         shadowOnlyMaterial.activeLight = directionalLight;
-        shadowOnlyMaterial.alpha = 0.1;
+        shadowOnlyMaterial.alpha = 0.4;
         ground.setEnabled(true);
         ground.parent = mmdRoot;
 
@@ -172,10 +172,12 @@ export class SceneBuilder implements ISceneBuilder {
             mmdModel.setAnimation("motion");
 
             const bodyBone = modelMesh.skeleton!.bones.find((bone) => bone.name === "センター");
+            const boneWorldMatrix = new Matrix();
 
             scene.onBeforeRenderObservable.add(() => {
-                bodyBone!.getFinalMatrix()!.getTranslationToRef(directionalLight.position);
-                directionalLight.position.y -= 10;
+                bodyBone!.getFinalMatrix()!.multiplyToRef(modelMesh.getWorldMatrix(), boneWorldMatrix);
+                boneWorldMatrix.getTranslationToRef(directionalLight.position);
+                directionalLight.position.y -= 0;
             });
         }
 
