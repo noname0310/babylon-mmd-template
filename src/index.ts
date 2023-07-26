@@ -10,7 +10,7 @@ window.onload = (): void => {
     canvas.style.display = "block";
     document.body.appendChild(canvas);
 
-    const engine = new Engine(canvas, true, {
+    const engine = new Engine(canvas, false, {
         preserveDrawingBuffer: true,
         stencil: true,
         antialias: true
