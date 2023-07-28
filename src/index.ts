@@ -13,7 +13,8 @@ window.onload = (): void => {
     const engine = new Engine(canvas, false, {
         preserveDrawingBuffer: true,
         stencil: true,
-        antialias: true
+        antialias: true,
+        doNotHandleContextLost: true
     }, true);
 
     BaseRuntime.Create({
