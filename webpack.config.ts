@@ -71,8 +71,7 @@ export default (env: any): webpack.Configuration & { devServer?: WebpackDevServe
             logging: "none"
         },
         hot: true,
-        watchFiles: ["src/**/*"],
-        https: true
+        watchFiles: ["src/**/*"]
     },
     mode: env.production ? "production" : "development"
 });
