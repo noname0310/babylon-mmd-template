@@ -1,8 +1,6 @@
 import "@babylonjs/core/Loading/loadingScreen";
 import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
 import "@babylonjs/core/Rendering/prePassRendererSceneComponent";
-import "@babylonjs/core/Rendering/depthRendererSceneComponent";
-import "@babylonjs/core/Rendering/geometryBufferRendererSceneComponent";
 import "@babylonjs/core/Helpers/sceneHelpers";
 import "@babylonjs/core/Meshes/thinInstanceMesh";
 import "babylon-mmd/esm/Loader/mmdOutlineRenderer";
