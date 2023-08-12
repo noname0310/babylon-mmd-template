@@ -130,8 +130,8 @@ export class SceneBuilder implements ISceneBuilder {
 
         promises.push(SceneLoader.ImportMeshAsync(
             undefined,
-            "res/private_test/model/YYB Hatsune Miku_10th.bpmx",
-            undefined,
+            "res/private_test/model/",
+            "YYB Hatsune Miku_10th.bpmx",
             scene,
             (event) => updateLoadingText(1, `Loading model... ${event.loaded}/${event.total} (${Math.floor(event.loaded * 100 / event.total)}%)`)
         ));
