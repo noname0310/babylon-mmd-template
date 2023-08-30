@@ -13,16 +13,7 @@ export default (env: any): webpack.Configuration & { devServer?: WebpackDevServe
         clean: true
     },
     optimization: {
-        minimize: env.production,
-        splitChunks: {
-            cacheGroups: {
-                vendor: {
-                    test: /[\\/]node_modules[\\/]/,
-                    name: "vendors",
-                    chunks: "all"
-                }
-            }
-        }
+        minimize: env.production
     },
     cache: true,
     module: {
