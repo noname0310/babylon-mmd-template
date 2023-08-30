@@ -5,6 +5,8 @@ import "@babylonjs/core/Helpers/sceneHelpers";
 import "@babylonjs/core/Meshes/thinInstanceMesh";
 import "babylon-mmd/esm/Loader/mmdOutlineRenderer";
 import "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
+import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation";
+import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation";
 
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import { PhysicsViewer } from "@babylonjs/core/Debug/physicsViewer";
@@ -16,8 +18,8 @@ import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
 import { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
 import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
@@ -91,7 +93,7 @@ export class SceneBuilder implements ISceneBuilder {
         shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
         shadowGenerator.frustumEdgeFalloff = 0.1;
 
-        const ground = MeshBuilder.CreateGround("ground1", { width: 100, height: 100, subdivisions: 2, updatable: false }, scene);
+        const ground = CreateGround("ground1", { width: 100, height: 100, subdivisions: 2, updatable: false }, scene);
         const shadowOnlyMaterial = ground.material = new ShadowOnlyMaterial("shadowOnly", scene);
         shadowOnlyMaterial.activeLight = directionalLight;
         shadowOnlyMaterial.alpha = 0.4;
