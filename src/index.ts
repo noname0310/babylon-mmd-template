@@ -11,10 +11,14 @@ window.onload = (): void => {
     document.body.appendChild(canvas);
 
     const engine = new Engine(canvas, false, {
-        preserveDrawingBuffer: true,
-        stencil: true,
-        antialias: true,
-        doNotHandleContextLost: true
+        preserveDrawingBuffer: false,
+        premultipliedAlpha: false,
+        powerPreference: "high-performance",
+        audioEngine: false,
+        doNotHandleContextLost: true,
+        doNotHandleTouchAction: true,
+        antialias: false,
+        stencil: false
     }, true);
 
     BaseRuntime.Create({

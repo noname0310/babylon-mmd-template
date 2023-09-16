@@ -1,15 +1,11 @@
 import "@babylonjs/core/Loading/loadingScreen";
 import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
-import "@babylonjs/core/Rendering/prePassRendererSceneComponent";
 import "@babylonjs/core/Helpers/sceneHelpers";
-import "@babylonjs/core/Meshes/thinInstanceMesh";
-import "babylon-mmd/esm/Loader/mmdOutlineRenderer";
 import "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation";
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation";
 
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
-import { PhysicsViewer } from "@babylonjs/core/Debug/physicsViewer";
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
@@ -17,19 +13,17 @@ import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator"
 import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
 import { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import { PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
-import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
-import { PhysicsShapeBox } from "@babylonjs/core/Physics/v2/physicsShape";
 import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
 import { Scene } from "@babylonjs/core/scene";
 import HavokPhysics from "@babylonjs/havok";
 import { ShadowOnlyMaterial } from "@babylonjs/materials/shadowOnly/shadowOnlyMaterial";
 import type { MmdAnimation } from "babylon-mmd/esm/Loader/Animation/mmdAnimation";
+import type { MmdStandardMaterialBuilder } from "babylon-mmd/esm/Loader/mmdStandardMaterialBuilder";
 import type { BpmxLoader } from "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
 import { BvmdLoader } from "babylon-mmd/esm/Loader/Optimized/bvmdLoader";
 import { SdefInjector } from "babylon-mmd/esm/Loader/sdefInjector";
@@ -46,10 +40,11 @@ export class SceneBuilder implements ISceneBuilder {
         SdefInjector.OverrideEngineCreateEffect(engine);
         const pmxLoader = SceneLoader.GetPluginForExtension(".bpmx") as BpmxLoader;
         pmxLoader.loggingEnabled = true;
+        const materialBuilder = pmxLoader.materialBuilder as MmdStandardMaterialBuilder;
         // materialBuilder.loadDiffuseTexture = (): void => { /* do nothing */ };
         // materialBuilder.loadSphereTexture = (): void => { /* do nothing */ };
         // materialBuilder.loadToonTexture = (): void => { /* do nothing */ };
-        // materialBuilder.loadOutlineRenderingProperties = (): void => { /* do nothing */ };
+        materialBuilder.loadOutlineRenderingProperties = (): void => { /* do nothing */ };
         SceneLoader.RegisterPlugin(pmxLoader);
 
         const scene = new Scene(engine);
@@ -71,7 +66,7 @@ export class SceneBuilder implements ISceneBuilder {
         camera.speed = 4 * 0.07;
 
         const hemisphericLight = new HemisphericLight("HemisphericLight", new Vector3(0, 1, 0), scene);
-        hemisphericLight.intensity = 0.5;
+        hemisphericLight.intensity = 0.4;
         hemisphericLight.specular = new Color3(0, 0, 0);
         hemisphericLight.groundColor = new Color3(1, 1, 1);
 
@@ -97,11 +92,12 @@ export class SceneBuilder implements ISceneBuilder {
         const shadowOnlyMaterial = ground.material = new ShadowOnlyMaterial("shadowOnly", scene);
         shadowOnlyMaterial.activeLight = directionalLight;
         shadowOnlyMaterial.alpha = 0.4;
-        ground.setEnabled(true);
+        ground.receiveShadows = true;
         ground.parent = mmdRoot;
 
         const mmdRuntime = new MmdRuntime(new MmdPhysics(scene));
         mmdRuntime.loggingEnabled = true;
+        mmdRuntime.register(scene);
 
         const audioPlayer = new StreamAudioPlayer(scene);
         audioPlayer.preservesPitch = false;
@@ -115,7 +111,7 @@ export class SceneBuilder implements ISceneBuilder {
 
         engine.displayLoadingUI();
 
-        const loadingTexts: string[] = new Array(4).fill("");
+        const loadingTexts: string[] = [];
         const updateLoadingText = (updateIndex: number, text: string): void => {
             loadingTexts[updateIndex] = text;
             engine.loadingUIText = "<br/><br/><br/><br/>" + loadingTexts.join("<br/><br/>");
@@ -142,17 +138,32 @@ export class SceneBuilder implements ISceneBuilder {
             updateLoadingText(2, "Loading physics engine...");
             const havokInstance = await HavokPhysics();
             const havokPlugin = new HavokPlugin(true, havokInstance);
-            scene.enablePhysics(new Vector3(0, -9.8, 0), havokPlugin);
+            scene.enablePhysics(new Vector3(0, -98 * 0.07, 0), havokPlugin);
             updateLoadingText(2, "Loading physics engine... Done");
         })());
 
         const loadResults = await Promise.all(promises);
 
-        setTimeout(() => engine.hideLoadingUI(), 0);
+        scene.onAfterRenderObservable.addOnce(() => {
+            engine.hideLoadingUI();
 
-        scene.meshes.forEach((mesh) => {
-            mesh.receiveShadows = true;
-            shadowGenerator.addShadowCaster(mesh);
+            scene.freezeMaterials();
+
+            const meshes = scene.meshes;
+            for (let i = 0, len = meshes.length; i < len; ++i) {
+                const mesh = meshes[i];
+                mesh.freezeWorldMatrix();
+                mesh.doNotSyncBoundingInfo = true;
+                mesh.isPickable = false;
+                mesh.doNotSyncBoundingInfo = true;
+                mesh.alwaysSelectAsActiveMesh = true;
+            }
+
+            scene.skipPointerMovePicking = true;
+            scene.skipPointerDownPicking = true;
+            scene.skipPointerUpPicking = true;
+            scene.skipFrustumClipping = true;
+            scene.blockMaterialDirtyMechanism = true;
         });
 
         mmdRuntime.setCamera(mmdCamera);
@@ -162,6 +173,9 @@ export class SceneBuilder implements ISceneBuilder {
         {
             const modelMesh = loadResults[1].meshes[0] as Mesh;
             modelMesh.parent = mmdRoot;
+
+            shadowGenerator.addShadowCaster(modelMesh);
+            modelMesh.receiveShadows = true;
 
             const mmdModel = mmdRuntime.createMmdModel(modelMesh);
             mmdModel.addAnimation(loadResults[0] as MmdAnimation);
@@ -177,45 +191,26 @@ export class SceneBuilder implements ISceneBuilder {
             });
         }
 
-        mmdRuntime.register(scene);
+        // const groundRigidBody = new PhysicsBody(ground, PhysicsMotionType.STATIC, true, scene);
+        // groundRigidBody.shape = new PhysicsShapeBox(
+        //     new Vector3(0, -1, 0),
+        //     new Quaternion(),
+        //     new Vector3(100, 2, 100), scene);
 
-        const groundRigidBody = new PhysicsBody(ground, PhysicsMotionType.STATIC, true, scene);
-        groundRigidBody.shape = new PhysicsShapeBox(
-            new Vector3(0, -1, 0),
-            new Quaternion(),
-            new Vector3(100, 2, 100), scene);
-
-
-        {
-            const physicsViewer = new PhysicsViewer(scene);
-            const modelMesh = loadResults[1].meshes[0] as Mesh;
-            for (const node of modelMesh.getChildren()) {
-                if ((node as any).physicsBody) {
-                    physicsViewer.showBody((node as any).physicsBody);
-                }
-            }
-            physicsViewer.dispose();
-            // physicsViewer.showBody(groundRigidBody);
-        }
-
-        const useBasicPostProcess = true;
-
-        if (useBasicPostProcess) {
-            const defaultPipeline = new DefaultRenderingPipeline("default", true, scene, [mmdCamera]);
-            defaultPipeline.samples = 4;
-            defaultPipeline.bloomEnabled = false;
-            defaultPipeline.chromaticAberrationEnabled = false;
-            defaultPipeline.chromaticAberration.aberrationAmount = 1;
-            defaultPipeline.depthOfFieldEnabled = false;
-            defaultPipeline.fxaaEnabled = true;
-            defaultPipeline.imageProcessingEnabled = false;
-            defaultPipeline.imageProcessing.toneMappingEnabled = true;
-            defaultPipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-            defaultPipeline.imageProcessing.vignetteWeight = 0.5;
-            defaultPipeline.imageProcessing.vignetteStretch = 0.5;
-            defaultPipeline.imageProcessing.vignetteColor = new Color4(0, 0, 0, 0);
-            defaultPipeline.imageProcessing.vignetteEnabled = true;
-        }
+        const defaultPipeline = new DefaultRenderingPipeline("default", true, scene, [mmdCamera, camera]);
+        defaultPipeline.samples = 4;
+        defaultPipeline.bloomEnabled = false;
+        defaultPipeline.chromaticAberrationEnabled = true;
+        defaultPipeline.chromaticAberration.aberrationAmount = 1;
+        defaultPipeline.depthOfFieldEnabled = false;
+        defaultPipeline.fxaaEnabled = true;
+        defaultPipeline.imageProcessingEnabled = false;
+        defaultPipeline.imageProcessing.toneMappingEnabled = true;
+        defaultPipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
+        defaultPipeline.imageProcessing.vignetteWeight = 0.5;
+        defaultPipeline.imageProcessing.vignetteStretch = 0.5;
+        defaultPipeline.imageProcessing.vignetteColor = new Color4(0, 0, 0, 0);
+        defaultPipeline.imageProcessing.vignetteEnabled = true;
 
         let lastClickTime = -Infinity;
         canvas.onclick = (): void => {
@@ -236,12 +231,17 @@ export class SceneBuilder implements ISceneBuilder {
 
         // Inspector.Show(scene, { });
 
-        scene.createDefaultXRExperienceAsync({
+        const webXrExperience = await scene.createDefaultXRExperienceAsync({
             uiOptions: {
                 sessionMode: "immersive-ar",
                 referenceSpaceType: "local-floor"
             }
         });
+        webXrExperience;
+        // webXrExperience.baseExperience?.sessionManager.onXRSessionInit.add(() => {
+        //     defaultPipeline.addCamera(webXrExperience.baseExperience.camera);
+        // });
+
         return scene;
     }
 }
