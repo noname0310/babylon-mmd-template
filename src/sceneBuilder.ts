@@ -1,6 +1,7 @@
 import "@babylonjs/core/Loading/loadingScreen";
 import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
 import "@babylonjs/core/Helpers/sceneHelpers";
+import "@babylonjs/core/Materials/Node/Blocks";
 import "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation";
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation";
@@ -48,22 +49,24 @@ export class SceneBuilder implements ISceneBuilder {
         SceneLoader.RegisterPlugin(pmxLoader);
 
         const scene = new Scene(engine);
-        scene.clearColor = new Color4(1, 1, 1, 1.0);
+        scene.clearColor = new Color4(0.95, 0.95, 0.95, 1.0);
+
+        const worldScale = 0.09;
 
         const mmdRoot = new TransformNode("mmdRoot", scene);
-        mmdRoot.scaling.scaleInPlace(0.07);
+        mmdRoot.scaling.scaleInPlace(worldScale);
         mmdRoot.position.z = 1;
 
         const mmdCamera = new MmdCamera("mmdCamera", new Vector3(0, 10, 0), scene);
         mmdCamera.maxZ = 5000;
         mmdCamera.parent = mmdRoot;
 
-        const camera = new ArcRotateCamera("arcRotateCamera", 0, 0, 45 * 0.07, new Vector3(0, 10 * 0.07, 1), scene);
+        const camera = new ArcRotateCamera("arcRotateCamera", 0, 0, 45 * worldScale, new Vector3(0, 10 * worldScale, 1), scene);
         camera.maxZ = 5000;
-        camera.setPosition(new Vector3(0, 10, -45).scaleInPlace(0.07));
+        camera.setPosition(new Vector3(0, 10, -45).scaleInPlace(worldScale));
         camera.attachControl(canvas, false);
         camera.inertia = 0.8;
-        camera.speed = 4 * 0.07;
+        camera.speed = 4 * worldScale;
 
         const hemisphericLight = new HemisphericLight("HemisphericLight", new Vector3(0, 1, 0), scene);
         hemisphericLight.intensity = 0.4;
@@ -74,12 +77,12 @@ export class SceneBuilder implements ISceneBuilder {
         directionalLight.intensity = 0.8;
         directionalLight.autoCalcShadowZBounds = false;
         directionalLight.autoUpdateExtends = false;
-        directionalLight.shadowMaxZ = 2;
-        directionalLight.shadowMinZ = -2;
-        directionalLight.orthoTop = 1;
-        directionalLight.orthoBottom = -1;
-        directionalLight.orthoLeft = -1;
-        directionalLight.orthoRight = 1;
+        directionalLight.shadowMaxZ = 20 * worldScale;
+        directionalLight.shadowMinZ = -20 * worldScale;
+        directionalLight.orthoTop = 18 * worldScale;
+        directionalLight.orthoBottom = -3 * worldScale;
+        directionalLight.orthoLeft = -10 * worldScale;
+        directionalLight.orthoRight = 10 * worldScale;
         directionalLight.shadowOrthoScale = 0;
 
         const shadowGenerator = new ShadowGenerator(1024, directionalLight, true);
@@ -138,33 +141,13 @@ export class SceneBuilder implements ISceneBuilder {
             updateLoadingText(2, "Loading physics engine...");
             const havokInstance = await HavokPhysics();
             const havokPlugin = new HavokPlugin(true, havokInstance);
-            scene.enablePhysics(new Vector3(0, -98 * 0.07, 0), havokPlugin);
+            scene.enablePhysics(new Vector3(0, -98 * worldScale, 0), havokPlugin);
             updateLoadingText(2, "Loading physics engine... Done");
         })());
 
         const loadResults = await Promise.all(promises);
 
-        scene.onAfterRenderObservable.addOnce(() => {
-            engine.hideLoadingUI();
-
-            scene.freezeMaterials();
-
-            const meshes = scene.meshes;
-            for (let i = 0, len = meshes.length; i < len; ++i) {
-                const mesh = meshes[i];
-                mesh.freezeWorldMatrix();
-                mesh.doNotSyncBoundingInfo = true;
-                mesh.isPickable = false;
-                mesh.doNotSyncBoundingInfo = true;
-                mesh.alwaysSelectAsActiveMesh = true;
-            }
-
-            scene.skipPointerMovePicking = true;
-            scene.skipPointerDownPicking = true;
-            scene.skipPointerUpPicking = true;
-            scene.skipFrustumClipping = true;
-            scene.blockMaterialDirtyMechanism = true;
-        });
+        scene.onAfterRenderObservable.addOnce(() => engine.hideLoadingUI());
 
         mmdRuntime.setCamera(mmdCamera);
         mmdCamera.addAnimation(loadResults[0] as MmdAnimation);
@@ -190,6 +173,26 @@ export class SceneBuilder implements ISceneBuilder {
                 directionalLight.position.y -= 0;
             });
         }
+
+        scene.onAfterRenderObservable.addOnce(() => {
+            scene.freezeMaterials();
+
+            const meshes = scene.meshes;
+            for (let i = 0, len = meshes.length; i < len; ++i) {
+                const mesh = meshes[i];
+                mesh.freezeWorldMatrix();
+                mesh.doNotSyncBoundingInfo = true;
+                mesh.isPickable = false;
+                mesh.doNotSyncBoundingInfo = true;
+                mesh.alwaysSelectAsActiveMesh = true;
+            }
+
+            scene.skipPointerMovePicking = true;
+            scene.skipPointerDownPicking = true;
+            scene.skipPointerUpPicking = true;
+            scene.skipFrustumClipping = true;
+            scene.blockMaterialDirtyMechanism = true;
+        });
 
         // const groundRigidBody = new PhysicsBody(ground, PhysicsMotionType.STATIC, true, scene);
         // groundRigidBody.shape = new PhysicsShapeBox(

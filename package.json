@@ -19,10 +19,10 @@
     },
     "homepage": "https://github.com/noname0310/babylon-mmd-viewer#readme",
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^6.7.0",
-        "@typescript-eslint/parser": "^6.7.0",
+        "@typescript-eslint/eslint-plugin": "^6.7.2",
+        "@typescript-eslint/parser": "^6.7.2",
         "copy-webpack-plugin": "^11.0.0",
-        "eslint": "^8.49.0",
+        "eslint": "^8.50.0",
         "eslint-plugin-simple-import-sort": "^10.0.0",
         "eslint-webpack-plugin": "^4.0.1",
         "file-loader": "^6.2.0",
@@ -38,10 +38,10 @@
     },
     "sideEffects": false,
     "dependencies": {
-        "@babylonjs/core": "^6.21.0",
+        "@babylonjs/core": "^6.21.2",
         "@babylonjs/havok": "^1.1.4",
-        "@babylonjs/inspector": "^6.21.0",
-        "@babylonjs/materials": "^6.21.0",
-        "babylon-mmd": "^0.27.1"
+        "@babylonjs/inspector": "^6.21.2",
+        "@babylonjs/materials": "^6.21.2",
+        "babylon-mmd": "^0.28.0"
     }
 }
