@@ -58,11 +58,13 @@ export class SceneBuilder implements ISceneBuilder {
         mmdRoot.position.z = 1;
 
         const mmdCamera = new MmdCamera("mmdCamera", new Vector3(0, 10, 0), scene);
-        mmdCamera.maxZ = 5000;
+        mmdCamera.maxZ = 300;
+        mmdCamera.minZ = 1;
         mmdCamera.parent = mmdRoot;
 
         const camera = new ArcRotateCamera("arcRotateCamera", 0, 0, 45 * worldScale, new Vector3(0, 10 * worldScale, 1), scene);
-        camera.maxZ = 5000;
+        camera.maxZ = 1000;
+        camera.minZ = 0.1;
         camera.setPosition(new Vector3(0, 10, -45).scaleInPlace(worldScale));
         camera.attachControl(canvas, false);
         camera.inertia = 0.8;
@@ -170,7 +172,7 @@ export class SceneBuilder implements ISceneBuilder {
             scene.onBeforeRenderObservable.add(() => {
                 bodyBone!.getFinalMatrix()!.multiplyToRef(modelMesh.getWorldMatrix(), boneWorldMatrix);
                 boneWorldMatrix.getTranslationToRef(directionalLight.position);
-                directionalLight.position.y -= 0;
+                directionalLight.position.y -= 10 * worldScale;
             });
         }
 
