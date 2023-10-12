@@ -76,7 +76,7 @@ export class SceneBuilder implements ISceneBuilder {
         hemisphericLight.groundColor = new Color3(1, 1, 1);
 
         const directionalLight = new DirectionalLight("DirectionalLight", new Vector3(0.5, -1, 1), scene);
-        directionalLight.intensity = 0.8;
+        directionalLight.intensity = 0.6;
         directionalLight.autoCalcShadowZBounds = false;
         directionalLight.autoUpdateExtends = false;
         directionalLight.shadowMaxZ = 20 * worldScale;
