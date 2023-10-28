@@ -1,8 +1,19 @@
+// for use loading screen, we need to import following module.
 import "@babylonjs/core/Loading/loadingScreen";
+// for cast shadow, we need to import following module.
 import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
+// for use WebXR we need to import following two modules.
 import "@babylonjs/core/Helpers/sceneHelpers";
 import "@babylonjs/core/Materials/Node/Blocks";
+// if your model has .tga texture, uncomment following line.
+// import "@babylonjs/core/Materials/Textures/Loaders/tgaTextureLoader";
+// for load .bpmx file, we need to import following module.
 import "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
+// if you want to use .pmx file, uncomment following line.
+// import "babylon-mmd/esm/Loader/pmxLoader";
+// if you want to use .pmd file, uncomment following line.
+// import "babylon-mmd/esm/Loader/pmdLoader";
+// for play `MmdAnimation` we need to import following two modules.
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation";
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation";
 
@@ -12,7 +23,6 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
 import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
-import { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
@@ -21,7 +31,7 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
 import { Scene } from "@babylonjs/core/scene";
-import HavokPhysics from "@babylonjs/havok";
+import havokPhysics from "@babylonjs/havok";
 import { ShadowOnlyMaterial } from "@babylonjs/materials/shadowOnly/shadowOnlyMaterial";
 import type { MmdAnimation } from "babylon-mmd/esm/Loader/Animation/mmdAnimation";
 import type { MmdStandardMaterialBuilder } from "babylon-mmd/esm/Loader/mmdStandardMaterialBuilder";
@@ -38,25 +48,33 @@ import type { ISceneBuilder } from "./baseRuntime";
 
 export class SceneBuilder implements ISceneBuilder {
     public async build(canvas: HTMLCanvasElement, engine: Engine): Promise<Scene> {
+        // for apply SDEF on shadow, outline, depth rendering
         SdefInjector.OverrideEngineCreateEffect(engine);
-        const pmxLoader = SceneLoader.GetPluginForExtension(".bpmx") as BpmxLoader;
-        pmxLoader.loggingEnabled = true;
-        const materialBuilder = pmxLoader.materialBuilder as MmdStandardMaterialBuilder;
+
+        // get bpmx loader and set some configurations.
+        const bpmxLoader = SceneLoader.GetPluginForExtension(".bpmx") as BpmxLoader;
+        bpmxLoader.loggingEnabled = true;
+        const materialBuilder = bpmxLoader.materialBuilder as MmdStandardMaterialBuilder;
+
+        // if you want override texture loading, uncomment following lines.
         // materialBuilder.loadDiffuseTexture = (): void => { /* do nothing */ };
         // materialBuilder.loadSphereTexture = (): void => { /* do nothing */ };
         // materialBuilder.loadToonTexture = (): void => { /* do nothing */ };
+
+        // if you need outline rendering, comment out following line.
         materialBuilder.loadOutlineRenderingProperties = (): void => { /* do nothing */ };
-        SceneLoader.RegisterPlugin(pmxLoader);
 
         const scene = new Scene(engine);
         scene.clearColor = new Color4(0.95, 0.95, 0.95, 1.0);
 
+        // scaling for WebXR
         const worldScale = 0.09;
 
         const mmdRoot = new TransformNode("mmdRoot", scene);
         mmdRoot.scaling.scaleInPlace(worldScale);
         mmdRoot.position.z = 1;
 
+        // mmd camera for play mmd camera animation
         const mmdCamera = new MmdCamera("mmdCamera", new Vector3(0, 10, 0), scene);
         mmdCamera.maxZ = 300;
         mmdCamera.minZ = 1;
@@ -77,6 +95,7 @@ export class SceneBuilder implements ISceneBuilder {
 
         const directionalLight = new DirectionalLight("DirectionalLight", new Vector3(0.5, -1, 1), scene);
         directionalLight.intensity = 0.6;
+        // set frustum size manually for optimize shadow rendering
         directionalLight.autoCalcShadowZBounds = false;
         directionalLight.autoUpdateExtends = false;
         directionalLight.shadowMaxZ = 20 * worldScale;
@@ -100,20 +119,27 @@ export class SceneBuilder implements ISceneBuilder {
         ground.receiveShadows = true;
         ground.parent = mmdRoot;
 
+        // create mmd runtime with physics
         const mmdRuntime = new MmdRuntime(new MmdPhysics(scene));
         mmdRuntime.loggingEnabled = true;
         mmdRuntime.register(scene);
 
+        // set audio player
         const audioPlayer = new StreamAudioPlayer(scene);
         audioPlayer.preservesPitch = false;
+        // you need to get this file by yourself from https://youtu.be/y__uZETTuL8
         audioPlayer.source = "res/private_test/motion/melancholy_night/melancholy_night.mp3";
         mmdRuntime.setAudioPlayer(audioPlayer);
 
+        // play before loading. this will cause the audio to play first before all assets are loaded.
+        // playing the audio first can help ease the user's patience
         mmdRuntime.playAnimation();
 
+        // create youtube like player control
         const mmdPlayerControl = new MmdPlayerControl(scene, mmdRuntime, audioPlayer);
         mmdPlayerControl.showPlayerControl();
 
+        // show loading screen
         engine.displayLoadingUI();
 
         const loadingTexts: string[] = [];
@@ -124,13 +150,16 @@ export class SceneBuilder implements ISceneBuilder {
 
         const promises: Promise<any>[] = [];
 
+        // for load .bvmd file, we use BvmdLoader. if you want to load .vmd or .vpd file, use VmdLoader / VpdLoader
         const bvmdLoader = new BvmdLoader(scene);
         bvmdLoader.loggingEnabled = true;
 
+        // you need to get this file by yourself from https://www.nicovideo.jp/watch/sm41164308
         promises.push(bvmdLoader.loadAsync("motion", "res/private_test/motion/melancholy_night/motion.bvmd",
             (event) => updateLoadingText(0, `Loading motion... ${event.loaded}/${event.total} (${Math.floor(event.loaded * 100 / event.total)}%)`))
         );
 
+        // you need to get this file by yourself from https://www.deviantart.com/sanmuyyb/art/YYB-Hatsune-Miku-10th-DL-702119716
         promises.push(SceneLoader.ImportMeshAsync(
             undefined,
             "res/private_test/model/",
@@ -141,14 +170,16 @@ export class SceneBuilder implements ISceneBuilder {
 
         promises.push((async(): Promise<void> => {
             updateLoadingText(2, "Loading physics engine...");
-            const havokInstance = await HavokPhysics();
+            const havokInstance = await havokPhysics();
             const havokPlugin = new HavokPlugin(true, havokInstance);
             scene.enablePhysics(new Vector3(0, -98 * worldScale, 0), havokPlugin);
             updateLoadingText(2, "Loading physics engine... Done");
         })());
 
+        // wait for all promises. parallel loading is faster than sequential loading.
         const loadResults = await Promise.all(promises);
 
+        // hide loading screen
         scene.onAfterRenderObservable.addOnce(() => engine.hideLoadingUI());
 
         mmdRuntime.setCamera(mmdCamera);
@@ -166,6 +197,7 @@ export class SceneBuilder implements ISceneBuilder {
             mmdModel.addAnimation(loadResults[0] as MmdAnimation);
             mmdModel.setAnimation("motion");
 
+            // make sure directional light follow the model
             const bodyBone = modelMesh.skeleton!.bones.find((bone) => bone.name === "センター");
             const boneWorldMatrix = new Matrix();
 
@@ -176,6 +208,7 @@ export class SceneBuilder implements ISceneBuilder {
             });
         }
 
+        // optimize scene when all assets are loaded
         scene.onAfterRenderObservable.addOnce(() => {
             scene.freezeMaterials();
 
@@ -196,6 +229,7 @@ export class SceneBuilder implements ISceneBuilder {
             scene.blockMaterialDirtyMechanism = true;
         });
 
+        // if you want ground collision, uncomment following lines.
         // const groundRigidBody = new PhysicsBody(ground, PhysicsMotionType.STATIC, true, scene);
         // groundRigidBody.shape = new PhysicsShapeBox(
         //     new Vector3(0, -1, 0),
@@ -209,14 +243,8 @@ export class SceneBuilder implements ISceneBuilder {
         defaultPipeline.chromaticAberration.aberrationAmount = 1;
         defaultPipeline.depthOfFieldEnabled = false;
         defaultPipeline.fxaaEnabled = true;
-        defaultPipeline.imageProcessingEnabled = false;
-        defaultPipeline.imageProcessing.toneMappingEnabled = true;
-        defaultPipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-        defaultPipeline.imageProcessing.vignetteWeight = 0.5;
-        defaultPipeline.imageProcessing.vignetteStretch = 0.5;
-        defaultPipeline.imageProcessing.vignetteColor = new Color4(0, 0, 0, 0);
-        defaultPipeline.imageProcessing.vignetteEnabled = true;
 
+        // switch camera when double click
         let lastClickTime = -Infinity;
         canvas.onclick = (): void => {
             const currentTime = performance.now();
@@ -234,8 +262,10 @@ export class SceneBuilder implements ISceneBuilder {
             }
         };
 
+        // if you want to use inspector, uncomment following line.
         // Inspector.Show(scene, { });
 
+        // webxr experience for AR
         const webXrExperience = await scene.createDefaultXRExperienceAsync({
             uiOptions: {
                 sessionMode: "immersive-ar",

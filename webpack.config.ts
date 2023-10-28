@@ -1,6 +1,6 @@
-import CopyWebpackPlugin from "copy-webpack-plugin";
-import ESLintPlugin from "eslint-webpack-plugin";
-import HtmlWebpackPlugin from "html-webpack-plugin";
+import copyWebpackPlugin from "copy-webpack-plugin";
+import eslintPlugin from "eslint-webpack-plugin";
+import htmlWebpackPlugin from "html-webpack-plugin";
 import path from "path";
 import type webpack from "webpack";
 import type { Configuration as WebpackDevServerConfiguration } from "webpack-dev-server";
@@ -40,15 +40,15 @@ export default (env: any): webpack.Configuration & { devServer?: WebpackDevServe
         }
     },
     plugins: [
-        new HtmlWebpackPlugin({
+        new htmlWebpackPlugin({
             template: "./src/index.html"
         }),
-        new ESLintPlugin({
+        new eslintPlugin({
             extensions: ["ts", "tsx"],
             fix: true,
             cache: true
         }),
-        new CopyWebpackPlugin({
+        new copyWebpackPlugin({
             patterns: [
                 { from: "res", to: "res" }
             ]
@@ -62,8 +62,7 @@ export default (env: any): webpack.Configuration & { devServer?: WebpackDevServe
             logging: "none"
         },
         hot: true,
-        watchFiles: ["src/**/*"],
-        https: true
+        watchFiles: ["src/**/*"]
     },
     mode: env.production ? "production" : "development"
 });

@@ -1,4 +1,4 @@
-## babylon-mmd-viewer
+## babylon-mmd-template
 
 Best practice for using babylon-mmd.
 
@@ -15,4 +15,12 @@ Implement and build high-quality mmd in the most optimized way possible with Bab
 
 ## Details
 
-I'll skip the details yet because babylon-mmd is changing steadily every day now...
+- Run it with `npm i` & `npm start`
+
+- It will do the eslint fix for you on save
+
+- All code is written in sceneBuilder.ts
+
+- For Add assets put them in the res folder and request them as "res/{assetpath}"
+
+- The sceneBuilder includes mmd sample code using webXR (See the comments in the code for a detailed explanation)
