@@ -12,13 +12,14 @@ window.onload = (): void => {
 
     const engine = new Engine(canvas, false, {
         preserveDrawingBuffer: false,
+        stencil: false,
+        antialias: false,
+        alpha: false,
         premultipliedAlpha: false,
         powerPreference: "high-performance",
-        audioEngine: false,
-        doNotHandleContextLost: true,
         doNotHandleTouchAction: true,
-        antialias: false,
-        stencil: false
+        doNotHandleContextLost: true,
+        audioEngine: false
     }, true);
 
     BaseRuntime.Create({
