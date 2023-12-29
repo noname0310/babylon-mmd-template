@@ -26,7 +26,6 @@ import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
-import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
@@ -40,6 +39,7 @@ import { BvmdLoader } from "babylon-mmd/esm/Loader/Optimized/bvmdLoader";
 import { SdefInjector } from "babylon-mmd/esm/Loader/sdefInjector";
 import { StreamAudioPlayer } from "babylon-mmd/esm/Runtime/Audio/streamAudioPlayer";
 import { MmdCamera } from "babylon-mmd/esm/Runtime/mmdCamera";
+import type { MmdMesh } from "babylon-mmd/esm/Runtime/mmdMesh";
 import { MmdPhysics } from "babylon-mmd/esm/Runtime/mmdPhysics";
 import { MmdRuntime } from "babylon-mmd/esm/Runtime/mmdRuntime";
 import { MmdPlayerControl } from "babylon-mmd/esm/Runtime/Util/mmdPlayerControl";
@@ -187,10 +187,10 @@ export class SceneBuilder implements ISceneBuilder {
         mmdCamera.setAnimation("motion");
 
         {
-            const modelMesh = loadResults[1].meshes[0] as Mesh;
+            const modelMesh = loadResults[1].meshes[0] as MmdMesh;
             modelMesh.parent = mmdRoot;
 
-            shadowGenerator.addShadowCaster(modelMesh);
+            for (const mesh of modelMesh.metadata.meshes) shadowGenerator.addShadowCaster(mesh);
             modelMesh.receiveShadows = true;
 
             const mmdModel = mmdRuntime.createMmdModel(modelMesh);
@@ -198,11 +198,11 @@ export class SceneBuilder implements ISceneBuilder {
             mmdModel.setAnimation("motion");
 
             // make sure directional light follow the model
-            const bodyBone = modelMesh.skeleton!.bones.find((bone) => bone.name === "センター");
+            const bodyBone = mmdModel.runtimeBones.find((bone) => bone.name === "センター");
             const boneWorldMatrix = new Matrix();
 
             scene.onBeforeRenderObservable.add(() => {
-                bodyBone!.getFinalMatrix()!.multiplyToRef(modelMesh.getWorldMatrix(), boneWorldMatrix);
+                bodyBone!.getWorldMatrixToRef(boneWorldMatrix).multiplyToRef(modelMesh.getWorldMatrix(), boneWorldMatrix);
                 boneWorldMatrix.getTranslationToRef(directionalLight.position);
                 directionalLight.position.y -= 10 * worldScale;
             });
