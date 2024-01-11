@@ -120,7 +120,7 @@ export class SceneBuilder implements ISceneBuilder {
         ground.parent = mmdRoot;
 
         // create mmd runtime with physics
-        const mmdRuntime = new MmdRuntime(new MmdPhysics(scene));
+        const mmdRuntime = new MmdRuntime(scene, new MmdPhysics(scene));
         mmdRuntime.loggingEnabled = true;
         mmdRuntime.register(scene);
 
@@ -177,24 +177,25 @@ export class SceneBuilder implements ISceneBuilder {
         })());
 
         // wait for all promises. parallel loading is faster than sequential loading.
-        const loadResults = await Promise.all(promises);
+        const [mmdAnimation, { meshes: [modelMesh] }] = await Promise.all(promises);
+        if (!((_mmdAnimation: any): _mmdAnimation is MmdAnimation => true)(mmdAnimation)) throw new Error("unreachable");
+        if (!((_mesh: any): _mesh is MmdMesh => true)(modelMesh)) throw new Error("unreachable");
 
         // hide loading screen
         scene.onAfterRenderObservable.addOnce(() => engine.hideLoadingUI());
 
         mmdRuntime.setCamera(mmdCamera);
-        mmdCamera.addAnimation(loadResults[0] as MmdAnimation);
+        mmdCamera.addAnimation(mmdAnimation);
         mmdCamera.setAnimation("motion");
 
         {
-            const modelMesh = loadResults[1].meshes[0] as MmdMesh;
             modelMesh.parent = mmdRoot;
 
             for (const mesh of modelMesh.metadata.meshes) shadowGenerator.addShadowCaster(mesh);
             modelMesh.receiveShadows = true;
 
             const mmdModel = mmdRuntime.createMmdModel(modelMesh);
-            mmdModel.addAnimation(loadResults[0] as MmdAnimation);
+            mmdModel.addAnimation(mmdAnimation);
             mmdModel.setAnimation("motion");
 
             // make sure directional light follow the model
