@@ -67,12 +67,8 @@ export class SceneBuilder implements ISceneBuilder {
         const scene = new Scene(engine);
         scene.clearColor = new Color4(0.95, 0.95, 0.95, 1.0);
 
-        // scaling for WebXR
-        const worldScale = 0.09;
-
         const mmdRoot = new TransformNode("mmdRoot", scene);
-        mmdRoot.scaling.scaleInPlace(worldScale);
-        mmdRoot.position.z = 1;
+        mmdRoot.position.z = 20;
 
         // mmd camera for play mmd camera animation
         const mmdCamera = new MmdCamera("mmdCamera", new Vector3(0, 10, 0), scene);
@@ -80,13 +76,13 @@ export class SceneBuilder implements ISceneBuilder {
         mmdCamera.minZ = 1;
         mmdCamera.parent = mmdRoot;
 
-        const camera = new ArcRotateCamera("arcRotateCamera", 0, 0, 45 * worldScale, new Vector3(0, 10 * worldScale, 1), scene);
+        const camera = new ArcRotateCamera("arcRotateCamera", 0, 0, 45, new Vector3(0, 10, 1), scene);
         camera.maxZ = 1000;
         camera.minZ = 0.1;
-        camera.setPosition(new Vector3(0, 10, -45).scaleInPlace(worldScale));
+        camera.setPosition(new Vector3(0, 10, -45));
         camera.attachControl(canvas, false);
         camera.inertia = 0.8;
-        camera.speed = 4 * worldScale;
+        camera.speed = 4;
 
         const hemisphericLight = new HemisphericLight("HemisphericLight", new Vector3(0, 1, 0), scene);
         hemisphericLight.intensity = 0.4;
@@ -98,12 +94,12 @@ export class SceneBuilder implements ISceneBuilder {
         // set frustum size manually for optimize shadow rendering
         directionalLight.autoCalcShadowZBounds = false;
         directionalLight.autoUpdateExtends = false;
-        directionalLight.shadowMaxZ = 20 * worldScale;
-        directionalLight.shadowMinZ = -20 * worldScale;
-        directionalLight.orthoTop = 18 * worldScale;
-        directionalLight.orthoBottom = -3 * worldScale;
-        directionalLight.orthoLeft = -10 * worldScale;
-        directionalLight.orthoRight = 10 * worldScale;
+        directionalLight.shadowMaxZ = 20;
+        directionalLight.shadowMinZ = -20;
+        directionalLight.orthoTop = 18;
+        directionalLight.orthoBottom = -3;
+        directionalLight.orthoLeft = -10;
+        directionalLight.orthoRight = 10;
         directionalLight.shadowOrthoScale = 0;
 
         const shadowGenerator = new ShadowGenerator(1024, directionalLight, true);
@@ -172,7 +168,7 @@ export class SceneBuilder implements ISceneBuilder {
             updateLoadingText(2, "Loading physics engine...");
             const havokInstance = await havokPhysics();
             const havokPlugin = new HavokPlugin(true, havokInstance);
-            scene.enablePhysics(new Vector3(0, -98 * worldScale, 0), havokPlugin);
+            scene.enablePhysics(new Vector3(0, -98, 0), havokPlugin);
             updateLoadingText(2, "Loading physics engine... Done");
         })());
 
@@ -191,8 +187,8 @@ export class SceneBuilder implements ISceneBuilder {
         {
             modelMesh.parent = mmdRoot;
 
-            for (const mesh of modelMesh.metadata.meshes) shadowGenerator.addShadowCaster(mesh);
-            modelMesh.receiveShadows = true;
+            for (const mesh of modelMesh.metadata.meshes) mesh.receiveShadows = true;
+            shadowGenerator.addShadowCaster(modelMesh);
 
             const mmdModel = mmdRuntime.createMmdModel(modelMesh);
             mmdModel.addAnimation(mmdAnimation);
@@ -205,11 +201,11 @@ export class SceneBuilder implements ISceneBuilder {
             scene.onBeforeRenderObservable.add(() => {
                 bodyBone!.getWorldMatrixToRef(boneWorldMatrix).multiplyToRef(modelMesh.getWorldMatrix(), boneWorldMatrix);
                 boneWorldMatrix.getTranslationToRef(directionalLight.position);
-                directionalLight.position.y -= 10 * worldScale;
+                directionalLight.position.y -= 10;
             });
         }
 
-        // optimize scene when all assets are loaded
+        // optimize scene when all assets are loaded (unstable)
         scene.onAfterRenderObservable.addOnce(() => {
             scene.freezeMaterials();
 
@@ -244,6 +240,7 @@ export class SceneBuilder implements ISceneBuilder {
         defaultPipeline.chromaticAberration.aberrationAmount = 1;
         defaultPipeline.depthOfFieldEnabled = false;
         defaultPipeline.fxaaEnabled = true;
+        defaultPipeline.imageProcessingEnabled = false;
 
         // switch camera when double click
         let lastClickTime = -Infinity;
@@ -273,10 +270,13 @@ export class SceneBuilder implements ISceneBuilder {
                 referenceSpaceType: "local-floor"
             }
         });
-        webXrExperience;
-        // webXrExperience.baseExperience?.sessionManager.onXRSessionInit.add(() => {
-        //     defaultPipeline.addCamera(webXrExperience.baseExperience.camera);
-        // });
+        if (webXrExperience.baseExperience !== undefined) {
+            // post process seems not working on immersive-ar
+            // webXrExperience.baseExperience.sessionManager.onXRFrameObservable.addOnce(() => {
+            //     defaultPipeline.addCamera(webXrExperience.baseExperience.camera);
+            // });
+            webXrExperience.baseExperience.sessionManager.worldScalingFactor = 15;
+        }
 
         return scene;
     }
