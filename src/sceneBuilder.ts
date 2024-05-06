@@ -18,7 +18,7 @@ import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation";
 import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation";
 
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
-import type { Engine } from "@babylonjs/core/Engines/engine";
+import type { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
@@ -47,7 +47,7 @@ import { MmdPlayerControl } from "babylon-mmd/esm/Runtime/Util/mmdPlayerControl"
 import type { ISceneBuilder } from "./baseRuntime";
 
 export class SceneBuilder implements ISceneBuilder {
-    public async build(canvas: HTMLCanvasElement, engine: Engine): Promise<Scene> {
+    public async build(canvas: HTMLCanvasElement, engine: AbstractEngine): Promise<Scene> {
         // for apply SDEF on shadow, outline, depth rendering
         SdefInjector.OverrideEngineCreateEffect(engine);
 
@@ -103,6 +103,7 @@ export class SceneBuilder implements ISceneBuilder {
         directionalLight.shadowOrthoScale = 0;
 
         const shadowGenerator = new ShadowGenerator(1024, directionalLight, true);
+        shadowGenerator.transparencyShadow = true;
         shadowGenerator.usePercentageCloserFiltering = true;
         shadowGenerator.forceBackFacesOnly = true;
         shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
