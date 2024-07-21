@@ -22,7 +22,6 @@ import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation";
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import type { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
-import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
 import { SceneLoader } from "@babylonjs/core/Loading/sceneLoader";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
@@ -34,7 +33,6 @@ import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPi
 import { Scene } from "@babylonjs/core/scene";
 import havokPhysics from "@babylonjs/havok";
 import { ShadowOnlyMaterial } from "@babylonjs/materials/shadowOnly/shadowOnlyMaterial";
-import type { MmdAnimation } from "babylon-mmd/esm/Loader/Animation/mmdAnimation";
 import type { MmdStandardMaterialBuilder } from "babylon-mmd/esm/Loader/mmdStandardMaterialBuilder";
 import type { BpmxLoader } from "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
 import { BvmdLoader } from "babylon-mmd/esm/Loader/Optimized/bvmdLoader";
@@ -43,6 +41,8 @@ import { StreamAudioPlayer } from "babylon-mmd/esm/Runtime/Audio/streamAudioPlay
 import { MmdCamera } from "babylon-mmd/esm/Runtime/mmdCamera";
 import type { MmdMesh } from "babylon-mmd/esm/Runtime/mmdMesh";
 import { MmdRuntime } from "babylon-mmd/esm/Runtime/mmdRuntime";
+// for use Ammo.js physics engine, uncomment following line.
+// import ammoPhysics from "babylon-mmd/esm/Runtime/Physics/External/ammo.wasm";
 import { MmdPhysics } from "babylon-mmd/esm/Runtime/Physics/mmdPhysics";
 import { MmdPlayerControl } from "babylon-mmd/esm/Runtime/Util/mmdPlayerControl";
 
@@ -63,11 +63,12 @@ export class SceneBuilder implements ISceneBuilder {
         // materialBuilder.loadSphereTexture = (): void => { /* do nothing */ };
         // materialBuilder.loadToonTexture = (): void => { /* do nothing */ };
 
-        // if you need outline rendering, comment out following line.
+        // if you dont need outline rendering, comment out following line.
         // materialBuilder.loadOutlineRenderingProperties = (): void => { /* do nothing */ };
 
         const scene = new Scene(engine);
         scene.clearColor = new Color4(0.95, 0.95, 0.95, 1.0);
+        scene.ambientColor = new Color3(0.5, 0.5, 0.5); // mmd scale material ambient color to 0.5. for same result, set ambient color to 0.5
 
         const mmdRoot = new TransformNode("mmdRoot", scene);
         mmdRoot.position.z = 20;
@@ -85,14 +86,16 @@ export class SceneBuilder implements ISceneBuilder {
         camera.attachControl(canvas, false);
         camera.inertia = 0.8;
         camera.speed = 4;
+        camera.parent = mmdRoot;
 
-        const hemisphericLight = new HemisphericLight("HemisphericLight", new Vector3(0, 1, 0), scene);
-        hemisphericLight.intensity = 0.4;
-        hemisphericLight.specular = new Color3(0, 0, 0);
-        hemisphericLight.groundColor = new Color3(1, 1, 1);
+        // for same result with mmd, we should use only directional light but if you want to use hemispheric light, uncomment following lines.
+        // const hemisphericLight = new HemisphericLight("HemisphericLight", new Vector3(0, 1, 0), scene);
+        // hemisphericLight.intensity = 0.4;
+        // hemisphericLight.specular = new Color3(0, 0, 0);
+        // hemisphericLight.groundColor = new Color3(1, 1, 1);
 
         const directionalLight = new DirectionalLight("DirectionalLight", new Vector3(0.5, -1, 1), scene);
-        directionalLight.intensity = 0.6;
+        directionalLight.intensity = 1.0;
         // set frustum size manually for optimize shadow rendering
         directionalLight.autoCalcShadowZBounds = false;
         directionalLight.autoUpdateExtends = false;
@@ -119,7 +122,12 @@ export class SceneBuilder implements ISceneBuilder {
         ground.parent = mmdRoot;
 
         // create mmd runtime with physics
-        const mmdRuntime = new MmdRuntime(scene, new MmdPhysics(scene));
+        const mmdRuntime = new MmdRuntime(scene, new MmdPhysics(scene)); // `MmdPhysics` use Havok physics engine for solve rigid body simulation
+        //since Havok is not used by MMD, this may cause some weird behavior on physics simulation.
+
+        // MMD use bullet physics engine for rigid body simulation. and Ammo.js is a port of bullet physics engine to JavaScript.
+        // const mmdRuntime = new MmdRuntime(scene, new MmdAmmoPhysics(scene)); // you can use Ammo.js physics engine for reproduce more similar behavior with MMD.
+
         mmdRuntime.loggingEnabled = true;
         mmdRuntime.register(scene);
 
@@ -147,38 +155,35 @@ export class SceneBuilder implements ISceneBuilder {
             engine.loadingUIText = "<br/><br/><br/><br/>" + loadingTexts.join("<br/><br/>");
         };
 
-        const promises: Promise<any>[] = [];
-
         // for load .bvmd file, we use BvmdLoader. if you want to load .vmd or .vpd file, use VmdLoader / VpdLoader
         const bvmdLoader = new BvmdLoader(scene);
         bvmdLoader.loggingEnabled = true;
 
-        // you need to get this file by yourself from https://www.nicovideo.jp/watch/sm41164308
-        promises.push(bvmdLoader.loadAsync("motion", "res/private_test/motion/melancholy_night/motion.bvmd",
-            (event) => updateLoadingText(0, `Loading motion... ${event.loaded}/${event.total} (${Math.floor(event.loaded * 100 / event.total)}%)`))
-        );
-
-        // you need to get this file by yourself from https://www.deviantart.com/sanmuyyb/art/YYB-Hatsune-Miku-10th-DL-702119716
-        promises.push(SceneLoader.ImportMeshAsync(
-            undefined,
-            "res/private_test/model/",
-            "YYB Hatsune Miku_10th.bpmx",
-            scene,
-            (event) => updateLoadingText(1, `Loading model... ${event.loaded}/${event.total} (${Math.floor(event.loaded * 100 / event.total)}%)`)
-        ));
-
-        promises.push((async(): Promise<void> => {
-            updateLoadingText(2, "Loading physics engine...");
-            const havokInstance = await havokPhysics();
-            const havokPlugin = new HavokPlugin(true, havokInstance);
-            scene.enablePhysics(new Vector3(0, -98, 0), havokPlugin);
-            updateLoadingText(2, "Loading physics engine... Done");
-        })());
-
-        // wait for all promises. parallel loading is faster than sequential loading.
-        const [mmdAnimation, { meshes: [modelMesh] }] = await Promise.all(promises);
-        if (!((_mmdAnimation: any): _mmdAnimation is MmdAnimation => true)(mmdAnimation)) throw new Error("unreachable");
-        if (!((_mesh: any): _mesh is MmdMesh => true)(modelMesh)) throw new Error("unreachable");
+        // fatch assets in parallel by using Promise.all
+        const [mmdAnimation, modelMesh] = await Promise.all([
+            // you need to get this file by yourself from https://www.nicovideo.jp/watch/sm41164308
+            bvmdLoader.loadAsync("motion", "res/private_test/motion/melancholy_night/motion.bvmd",
+                (event) => updateLoadingText(0, `Loading motion... ${event.loaded}/${event.total} (${Math.floor(event.loaded * 100 / event.total)}%)`)),
+            // you need to get this file by yourself from https://www.deviantart.com/sanmuyyb/art/YYB-Hatsune-Miku-10th-DL-702119716
+            // for this example, we use .bpmx file. but you can use .pmx or .pmd file with same way with side effect import statement at the top of this file.
+            SceneLoader.ImportMeshAsync(
+                undefined,
+                "res/private_test/model/",
+                "YYB Hatsune Miku_10th.bpmx",
+                scene,
+                (event) => updateLoadingText(1, `Loading model... ${event.loaded}/${event.total} (${Math.floor(event.loaded * 100 / event.total)}%)`)
+            ).then(result => result.meshes[0] as MmdMesh),
+            (async(): Promise<void> => {
+                updateLoadingText(2, "Loading physics engine...");
+                const physicsInstance = await havokPhysics();
+                const physicsPlugin = new HavokPlugin(true, physicsInstance);
+                // for Ammo.js physics engine
+                // const physicsInstance = await ammoPhysics();
+                // const physicsPlugin = new MmdAmmoJSPlugin(true, physicsInstance);
+                scene.enablePhysics(new Vector3(0, -98, 0), physicsPlugin);
+                updateLoadingText(2, "Loading physics engine... Done");
+            })()
+        ]);
 
         // hide loading screen
         scene.onAfterRenderObservable.addOnce(() => engine.hideLoadingUI());
@@ -241,7 +246,6 @@ export class SceneBuilder implements ISceneBuilder {
         defaultPipeline.bloomEnabled = false;
         defaultPipeline.chromaticAberrationEnabled = true;
         defaultPipeline.chromaticAberration.aberrationAmount = 1;
-        defaultPipeline.depthOfFieldEnabled = false;
         defaultPipeline.fxaaEnabled = true;
         defaultPipeline.imageProcessingEnabled = false;
 
@@ -253,14 +257,9 @@ export class SceneBuilder implements ISceneBuilder {
                 lastClickTime = currentTime;
                 return;
             }
-
             lastClickTime = -Infinity;
 
-            if (scene.activeCamera === mmdCamera) {
-                scene.activeCamera = camera;
-            } else {
-                scene.activeCamera = mmdCamera;
-            }
+            scene.activeCamera = scene.activeCamera === mmdCamera ? camera : mmdCamera;
         };
 
         // if you want to use inspector, uncomment following line.
