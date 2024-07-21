@@ -13,6 +13,7 @@
         "noImplicitOverride": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
+        "sourceMap": true,
         "typeRoots": [
             "./src/Types",
             "./node_modules/@types"

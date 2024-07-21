@@ -16,6 +16,7 @@ export default (env: any): webpack.Configuration & { devServer?: WebpackDevServe
         minimize: env.production
     },
     cache: true,
+    devtool: env.production ? undefined : "inline-source-map",
     module: {
         rules: [
             {
