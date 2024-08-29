@@ -17,7 +17,7 @@ window.onload = (): void => {
         alpha: true,
         premultipliedAlpha: false,
         powerPreference: "high-performance",
-        doNotHandleTouchAction: true,
+        doNotHandleTouchAction: false,
         doNotHandleContextLost: true,
         audioEngine: false
     }, true);
