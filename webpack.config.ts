@@ -57,6 +57,12 @@ export default (env: any): webpack.Configuration & { devServer?: WebpackDevServe
                 loader: "ts-loader"
             },
             {
+                test: /\.m?js$/,
+                resolve: {
+                    fullySpecified: false
+                }
+            },
+            {
                 test: /\.html$/,
                 loader: "html-loader"
             }
@@ -106,5 +112,8 @@ export default (env: any): webpack.Configuration & { devServer?: WebpackDevServe
             "Cross-Origin-Embedder-Policy": "require-corp"
         }
     },
+    ignoreWarnings: [
+        (warning): boolean => warning.message.includes("Circular dependency between chunks with runtime")
+    ],
     mode: env.production ? "production" : "development"
 });
