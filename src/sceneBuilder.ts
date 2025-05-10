@@ -33,7 +33,7 @@ import havokPhysics from "@babylonjs/havok";
 import { ShadowOnlyMaterial } from "@babylonjs/materials/shadowOnly/shadowOnlyMaterial";
 import { MmdStandardMaterialBuilder } from "babylon-mmd/esm/Loader/mmdStandardMaterialBuilder";
 import { BvmdLoader } from "babylon-mmd/esm/Loader/Optimized/bvmdLoader";
-import { registerDxBmpTextureLoader } from "babylon-mmd/esm/Loader/registerDxBmpTextureLoader";
+import { RegisterDxBmpTextureLoader } from "babylon-mmd/esm/Loader/registerDxBmpTextureLoader";
 import { SdefInjector } from "babylon-mmd/esm/Loader/sdefInjector";
 import { StreamAudioPlayer } from "babylon-mmd/esm/Runtime/Audio/streamAudioPlayer";
 import { MmdCamera } from "babylon-mmd/esm/Runtime/mmdCamera";
@@ -52,7 +52,7 @@ export class SceneBuilder implements ISceneBuilder {
         SdefInjector.OverrideEngineCreateEffect(engine);
 
         // for accurate bmp texture loading, we need custom loader
-        registerDxBmpTextureLoader();
+        RegisterDxBmpTextureLoader();
 
         // create mmd standard material builder
         const materialBuilder = new MmdStandardMaterialBuilder();
@@ -125,6 +125,8 @@ export class SceneBuilder implements ISceneBuilder {
 
         // MMD use bullet physics engine for rigid body simulation. and Ammo.js is a port of bullet physics engine to JavaScript.
         // const mmdRuntime = new MmdRuntime(scene, new MmdAmmoPhysics(scene)); // you can use Ammo.js physics engine for reproduce more similar behavior with MMD.
+
+        // see https://github.com/noname0310/babylon-mmd/pull/38 for more information about MMD Runtime setup
 
         mmdRuntime.loggingEnabled = true;
         mmdRuntime.register(scene);
