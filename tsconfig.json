@@ -1,9 +1,10 @@
 {
     "compilerOptions": {
         "target": "ESNext",
+        "module": "ESNext",
         "strict": true,
         "esModuleInterop": true,
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "forceConsistentCasingInFileNames": true,
         "stripInternal": true,
         "noEmitOnError": true,
@@ -18,10 +19,9 @@
             "./src/Types",
             "./node_modules/@types"
         ],
-        "baseUrl": "./src",
         "paths": {
             "@/*": [
-                "./*"
+                "./src/*"
             ]
         }
     },
@@ -30,7 +30,8 @@
     ],
     "ts-node": {
         "compilerOptions": {
-            "module": "commonjs"
+            "module": "NodeNext",
+            "moduleResolution": "NodeNext"
         }
     }
 }

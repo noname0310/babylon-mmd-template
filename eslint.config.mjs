@@ -8,7 +8,8 @@ import { defineConfig } from "eslint/config";
 export default defineConfig({
     ignores: [
         "**/dist/*"
-    ],
+    ]
+}, {
     extends: [
         js.configs.recommended,
         ...tseslint.configs.recommended,
