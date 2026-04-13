@@ -2,6 +2,7 @@
     "name": "babylon-mmd-template",
     "version": "1.0.0",
     "description": "babylon mmd sample project",
+    "type": "module",
     "scripts": {
         "start": "webpack serve --env development",
         "build": "webpack --env production",
