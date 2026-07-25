@@ -1,40 +1,40 @@
-// for use loading screen, we need to import following module.
-import "@babylonjs/core/Loading/loadingScreen";
-// for cast shadow, we need to import following module.
-import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
-// for use WebXR we need to import following two modules.
-import "@babylonjs/core/Helpers/sceneHelpers";
-import "@babylonjs/core/Materials/Node/Blocks";
-// for load .bpmx file, we need to import following module.
-import "babylon-mmd/esm/Loader/Optimized/bpmxLoader";
-// if you want to use .pmx file, uncomment following line.
-// import "babylon-mmd/esm/Loader/pmxLoader";
-// if you want to use .pmd file, uncomment following line.
-// import "babylon-mmd/esm/Loader/pmdLoader";
-// for render outline, we need to import following module.
-import "babylon-mmd/esm/Loader/mmdOutlineRenderer";
-// for play `MmdAnimation` we need to import following two modules.
-import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation";
-import "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation";
-
-import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
-import type { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
-import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera.pure";
+import { EngineFunctionContext } from "@babylonjs/core/Engines/abstractEngine.functions";
+import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine.pure";
+import { RegisterAbstractEngineLoadingScreen } from "@babylonjs/core/Engines/AbstractEngine/abstractEngine.loadingScreen.pure";
+import { RegisterAbstractEngineStates } from "@babylonjs/core/Engines/AbstractEngine/abstractEngine.states.pure";
+import { RegisterAbstractEngineStencil } from "@babylonjs/core/Engines/AbstractEngine/abstractEngine.stencil.pure";
+import { RegisterAbstractEngineTexture } from "@babylonjs/core/Engines/AbstractEngine/abstractEngine.texture.pure";
+import { RegisterEnginesExtensionsEngineAlpha } from "@babylonjs/core/Engines/Extensions/engine.alpha.pure";
+import { RegisterEnginesExtensionsEngineRawTexture } from "@babylonjs/core/Engines/Extensions/engine.rawTexture.pure";
+import { RegisterEnginesExtensionsEngineRenderTarget } from "@babylonjs/core/Engines/Extensions/engine.renderTarget.pure";
+import { RegisterEnginesExtensionsEngineRenderTargetTexture } from "@babylonjs/core/Engines/Extensions/engine.renderTargetTexture.pure";
+import { RegisterEngineUniformBuffer } from "@babylonjs/core/Engines/Extensions/engine.uniformBuffer.pure";
+import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight.pure";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
+import { RegisterLoadingScreen } from "@babylonjs/core/Loading/loadingScreen.pure";
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader";
-import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
-import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
-import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
-import { Scene } from "@babylonjs/core/scene";
+import { _GetCompatibleTextureLoader } from "@babylonjs/core/Materials/Textures/Loaders/textureLoaderManager";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color.pure";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder.pure";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode.pure";
+import { SetMissingSideEffectWarningsEnabled } from "@babylonjs/core/Misc/devTools";
+import { LoadFile, LoadImage } from "@babylonjs/core/Misc/fileTools.pure";
+import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline.pure";
+import { Scene } from "@babylonjs/core/scene.pure";
+import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 import { ShadowOnlyMaterial } from "@babylonjs/materials/shadowOnly/shadowOnlyMaterial";
+import { RegisterMmdOutlineRenderer } from "babylon-mmd/esm/Loader/mmdOutlineRenderer.pure";
 import { MmdStandardMaterialBuilder } from "babylon-mmd/esm/Loader/mmdStandardMaterialBuilder";
+import { RegisterBpmxLoader } from "babylon-mmd/esm/Loader/Optimized/bpmxLoader.pure";
 import { BvmdLoader } from "babylon-mmd/esm/Loader/Optimized/bvmdLoader";
 import { RegisterDxBmpTextureLoader } from "babylon-mmd/esm/Loader/registerDxBmpTextureLoader";
 import { SdefInjector } from "babylon-mmd/esm/Loader/sdefInjector";
+import { RegisterMmdRuntimeCameraAnimation } from "babylon-mmd/esm/Runtime/Animation/mmdRuntimeCameraAnimation.pure";
+import { RegisterMmdRuntimeModelAnimation } from "babylon-mmd/esm/Runtime/Animation/mmdRuntimeModelAnimation.pure";
 import { StreamAudioPlayer } from "babylon-mmd/esm/Runtime/Audio/streamAudioPlayer";
-import { MmdCamera } from "babylon-mmd/esm/Runtime/mmdCamera";
+import { MmdCamera } from "babylon-mmd/esm/Runtime/mmdCamera.pure";
 import type { MmdMesh } from "babylon-mmd/esm/Runtime/mmdMesh";
 import { MmdRuntime } from "babylon-mmd/esm/Runtime/mmdRuntime";
 import { MmdWasmInstanceTypeMPR } from "babylon-mmd/esm/Runtime/Optimized/InstanceType/multiPhysicsRelease";
@@ -51,11 +51,42 @@ import type { ISceneBuilder } from "./baseRuntime";
 
 export class SceneBuilder implements ISceneBuilder {
     public async build(canvas: HTMLCanvasElement, engine: AbstractEngine): Promise<Scene> {
-        // for apply SDEF on shadow, outline, depth rendering
-        SdefInjector.OverrideEngineCreateEffect(engine);
+        SetMissingSideEffectWarningsEnabled(true); // for debug, we enable missing side effect warning.
+
+        // Required Engine Extensions
+        RegisterAbstractEngineStates();
+        RegisterAbstractEngineStencil();
+        RegisterAbstractEngineTexture();
+        RegisterEnginesExtensionsEngineAlpha();
+        RegisterEnginesExtensionsEngineRawTexture();
+        // RegisterEnginesExtensionsEngineReadTexture();
+        RegisterEnginesExtensionsEngineRenderTarget();
+        RegisterEnginesExtensionsEngineRenderTargetTexture();
+        RegisterEngineUniformBuffer();
+
+        AbstractEngine.GetCompatibleTextureLoader = _GetCompatibleTextureLoader; // core/Engines/AbstractEngine/abstractEngine.textureLoaders.ts
+
+        // core/Misc/fileTools.pure.ts
+        // instead of using RegisterFileTools() to register the functions, we directly assign them to EngineFunctionContext
+        EngineFunctionContext.loadFile = LoadFile;
+        EngineFunctionContext.loadImage = LoadImage;
+
+        // Optional Engine Extensions
+        RegisterAbstractEngineLoadingScreen(); // optional, for use loading screen, we need to register this extension.
+        RegisterLoadingScreen(); // optional, for use default loading screen, we need to register this extension.
+
+        // RegisterPmxLoader(); // for load .pmx file, we need to register this extension.
+        // RegisterPmdLoader(); // for load .pmd file, we need to register this extension.
+        RegisterBpmxLoader(); // for load .bpmx file, we need to register this extension.
+        RegisterMmdOutlineRenderer(); // for render outline, we need to register this extension.
+        RegisterMmdRuntimeCameraAnimation(); // for play `MmdAnimation` we need to register this extension.
+        RegisterMmdRuntimeModelAnimation(); // for play `MmdAnimation` we need to register this extension.
 
         // for accurate bmp texture loading, we need custom loader
         RegisterDxBmpTextureLoader();
+
+        // for apply SDEF on shadow, outline, depth rendering
+        SdefInjector.OverrideEngineCreateEffect(engine);
 
         // create mmd standard material builder
         const materialBuilder = new MmdStandardMaterialBuilder();
@@ -265,10 +296,14 @@ export class SceneBuilder implements ISceneBuilder {
         };
 
         // if you want to use inspector, uncomment following line.
-        // Inspector.Show(scene, { });
+        // ShowInspector(scene);
 
         // webxr experience for AR
-        const webXrExperience = await scene.createDefaultXRExperienceAsync({
+        const webXrExperience = await WebXRDefaultExperience.CreateAsync(scene, {
+            disablePointerSelection: true,
+            disableTeleportation: true,
+            disableNearInteraction: true,
+            disableHandTracking: true,
             uiOptions: {
                 sessionMode: "immersive-ar",
                 referenceSpaceType: "local-floor"

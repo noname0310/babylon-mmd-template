@@ -152,6 +152,7 @@ export default defineConfig({
         "comma-dangle": ["error", "never"],
         "comma-spacing": ["error"],
         "eol-last": ["error", "always"],
+        "eqeqeq": ["error", "always"],
         "indent": ["error", 4],
         "linebreak-style": ["error", "unix"],
         "keyword-spacing": ["error"],
@@ -172,6 +173,7 @@ export default defineConfig({
         "space-before-function-paren": ["error", "never"],
         "space-in-parens": ["error"],
         "space-infix-ops": ["error"],
-        "space-unary-ops": ["error"]
+        "space-unary-ops": ["error"],
+        "no-useless-assignment": "off"
     }
 });

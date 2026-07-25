@@ -1,4 +1,4 @@
-import { Engine } from "@babylonjs/core/Engines/engine";
+import { Engine } from "@babylonjs/core/Engines/engine.pure";
 
 import { BaseRuntime } from "./baseRuntime";
 import { SceneBuilder } from "./sceneBuilder";
